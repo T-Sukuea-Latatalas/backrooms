@@ -22,6 +22,9 @@ window.Backrooms = {
     }
 };
 
+// タッチデバイスの自動判定
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 // --- 2. 3Dシーン基本設定 ---
 const GRID_SCALE = window.Backrooms.GRID_SCALE;
 
@@ -315,8 +318,9 @@ const playerRadius = 0.28;
 let isFalling = false;
 let fallTimer = 0;
 
+// PC用マウス視点移動
 document.addEventListener('mousemove', (e) => {
-    if (document.pointerLockElement === document.body && !isSwitching) {
+    if (document.pointerLockElement === document.body && !isSwitching && !isTouchDevice) {
         yaw -= e.movementX * mouseSensitivity;
         pitch -= e.movementY * mouseSensitivity;
         pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, pitch));
@@ -324,12 +328,14 @@ document.addEventListener('mousemove', (e) => {
     }
 });
 
+// PC用キーボード入力
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (key in keys) keys[key] = true;
 
     if (key === 'f') {
-        if (document.pointerLockElement === document.body && !isFalling && !isSwitching) {
+        const isActive = isTouchDevice ? isGameStarted : (document.pointerLockElement === document.body);
+        if (isActive && !isFalling && !isSwitching) {
             toggleFlashlight();
         }
     }
@@ -339,6 +345,165 @@ window.addEventListener('keyup', (e) => {
     const key = e.key.toLowerCase();
     if (key in keys) keys[key] = false;
 });
+
+// --- タッチデバイス用UI制御の実装 ---
+let joystickActive = false;
+let joystickTouchId = null;
+let joystickStartPos = { x: 0, y: 0 };
+let joystickMoveVector = { x: 0, y: 0 }; // 範囲: -1.0 ~ 1.0
+
+let viewActive = false;
+let viewTouchId = null;
+let lastViewPos = { x: 0, y: 0 };
+const touchSensitivity = 0.005;
+
+const joystickContainer = document.getElementById('joystick-container');
+const joystickHandle = document.getElementById('joystick-handle');
+
+if (isTouchDevice && joystickContainer && joystickHandle) {
+    // 移動ジョイスティックのタッチ制御
+    joystickContainer.addEventListener('touchstart', (e) => {
+        if (joystickActive) return;
+        const touch = e.changedTouches[0];
+        joystickTouchId = touch.identifier;
+        joystickActive = true;
+
+        const rect = joystickContainer.getBoundingClientRect();
+        joystickStartPos = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
+        if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!joystickActive) return;
+        let activeTouch = null;
+        for (let i = 0; i < e.touches.length; i++) {
+            if (e.touches[i].identifier === joystickTouchId) {
+                activeTouch = e.touches[i];
+                break;
+            }
+        }
+
+        if (activeTouch) {
+            const dx = activeTouch.clientX - joystickStartPos.x;
+            const dy = activeTouch.clientY - joystickStartPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 50; // ジョイスティックベースの半径制限
+
+            let moveX = dx;
+            let moveY = dy;
+            if (dist > maxDist) {
+                moveX = (dx / dist) * maxDist;
+                moveY = (dy / dist) * maxDist;
+            }
+
+            joystickHandle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            
+            joystickMoveVector.x = moveX / maxDist;
+            joystickMoveVector.y = moveY / maxDist;
+        }
+        if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    const endJoystick = (e) => {
+        if (!joystickActive) return;
+        let endTouch = false;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === joystickTouchId) {
+                endTouch = true;
+                break;
+            }
+        }
+        if (endTouch) {
+            joystickActive = false;
+            joystickTouchId = null;
+            joystickHandle.style.transform = 'translate(0px, 0px)';
+            joystickMoveVector = { x: 0, y: 0 };
+        }
+    };
+
+    window.addEventListener('touchend', endJoystick, { passive: false });
+    window.addEventListener('touchcancel', endJoystick, { passive: false });
+}
+
+// スワイプによる視点移動の制御
+window.addEventListener('touchstart', (e) => {
+    if (!isGameStarted) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        
+        // 移動用ジョイスティックのタッチは視点移動から除外
+        if (joystickActive && touch.identifier === joystickTouchId) continue;
+        
+        // 懐中電灯ボタンのタッチは視点移動から除外
+        const target = touch.target;
+        if (target && (target.id === 'flashlight-btn' || target.closest('#flashlight-btn'))) {
+            continue;
+        }
+
+        if (!viewActive) {
+            viewActive = true;
+            viewTouchId = touch.identifier;
+            lastViewPos = { x: touch.clientX, y: touch.clientY };
+            break;
+        }
+    }
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => {
+    if (!viewActive) return;
+    let activeTouch = null;
+    for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].identifier === viewTouchId) {
+            activeTouch = e.touches[i];
+            break;
+        }
+    }
+
+    if (activeTouch) {
+        const dx = activeTouch.clientX - lastViewPos.x;
+        const dy = activeTouch.clientY - lastViewPos.y;
+
+        yaw -= dx * touchSensitivity;
+        pitch -= dy * touchSensitivity;
+        pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, pitch));
+        camera.rotation.set(pitch, yaw, 0, 'YXZ');
+
+        lastViewPos = { x: activeTouch.clientX, y: activeTouch.clientY };
+    }
+    if (e.cancelable) e.preventDefault();
+}, { passive: false });
+
+const endView = (e) => {
+    if (!viewActive) return;
+    let endTouch = false;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === viewTouchId) {
+            endTouch = true;
+            break;
+        }
+    }
+    if (endTouch) {
+        viewActive = false;
+        viewTouchId = null;
+    }
+};
+
+window.addEventListener('touchend', endView, { passive: false });
+window.addEventListener('touchcancel', endView, { passive: false });
+
+// 懐中電灯ボタンのタップイベント
+const flBtn = document.getElementById('flashlight-btn');
+if (flBtn) {
+    flBtn.addEventListener('touchstart', (e) => {
+        if (e.cancelable) e.preventDefault();
+        if (isGameStarted && !isFalling && !isSwitching) {
+            toggleFlashlight();
+        }
+    }, { passive: false });
+}
 
 function toggleFlashlight() {
     flashlight.visible = !flashlight.visible;
@@ -504,21 +669,40 @@ function playGlitchSound() {
 
 // --- 8. ポインターロックと開始処理 ---
 const overlay = document.getElementById('overlay');
+const mobileUi = document.getElementById('mobile-ui');
+let isGameStarted = false;
+
 overlay.addEventListener('click', () => {
-    document.body.requestPointerLock();
+    if (isTouchDevice) {
+        // タッチデバイス時はPointerLock不要で即開始
+        startGame();
+    } else {
+        document.body.requestPointerLock();
+    }
 });
+
+function startGame() {
+    isGameStarted = true;
+    overlay.style.display = 'none';
+    if (isTouchDevice && mobileUi) {
+        mobileUi.classList.remove('hidden');
+    }
+    startHumNoise();
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
 
 document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement === document.body) {
-        overlay.style.display = 'none';
-        startHumNoise();
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        startGame();
     } else {
-        overlay.style.display = 'flex';
-        if (audioCtx && audioCtx.state === 'running') {
-            audioCtx.suspend();
+        if (!isTouchDevice) {
+            overlay.style.display = 'flex';
+            if (audioCtx && audioCtx.state === 'running') {
+                audioCtx.suspend();
+            }
+            isGameStarted = false;
         }
     }
 });
@@ -529,7 +713,9 @@ let bobTimer = 0;
 function animate() {
     requestAnimationFrame(animate);
 
-    if (document.pointerLockElement === document.body) {
+    const isActive = isTouchDevice ? isGameStarted : (document.pointerLockElement === document.body);
+
+    if (isActive) {
         updateProceduralMap();
 
         const px = camera.position.x;
@@ -576,16 +762,31 @@ function animate() {
                 const sinY = Math.sin(yaw);
                 const cosY = Math.cos(yaw);
 
-                if (keys.w) { moveX -= sinY; moveZ -= cosY; }
-                if (keys.s) { moveX += sinY; moveZ += cosY; }
-                if (keys.a) { moveX -= cosY; moveZ += sinY; }
-                if (keys.d) { moveX += cosY; moveZ -= sinY; }
+                if (isTouchDevice) {
+                    // ジョイスティック入力による移動方向算出
+                    moveX += joystickMoveVector.x * cosY + joystickMoveVector.y * sinY;
+                    moveZ += joystickMoveVector.x * -sinY + joystickMoveVector.y * cosY;
+                } else {
+                    // キーボード入力による移動方向算出
+                    if (keys.w) { moveX -= sinY; moveZ -= cosY; }
+                    if (keys.s) { moveX += sinY; moveZ += cosY; }
+                    if (keys.a) { moveX -= cosY; moveZ += sinY; }
+                    if (keys.d) { moveX += cosY; moveZ -= sinY; }
+                }
             }
 
             const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
             if (len > 0) {
-                moveX = (moveX / len) * playerSpeed;
-                moveZ = (moveZ / len) * playerSpeed;
+                let multiplier = playerSpeed;
+                if (isTouchDevice) {
+                    const joyLen = Math.sqrt(joystickMoveVector.x * joystickMoveVector.x + joystickMoveVector.y * joystickMoveVector.y);
+                    multiplier = playerSpeed * Math.min(1.0, joyLen);
+                    moveX = (moveX / len) * multiplier;
+                    moveZ = (moveZ / len) * multiplier;
+                } else {
+                    moveX = (moveX / len) * playerSpeed;
+                    moveZ = (moveZ / len) * playerSpeed;
+                }
 
                 bobTimer += 0.16;
                 camera.position.y = 1.7 + Math.sin(bobTimer) * 0.05;
