@@ -7,6 +7,8 @@ body, html {
     background-color: #13130c;
     font-family: 'Courier New', Courier, monospace;
     user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
 }
 
 #canvas-container {
@@ -15,6 +17,7 @@ body, html {
     position: absolute;
     top: 0;
     left: 0;
+    touch-action: none;
 }
 
 /* 画面全体のビネット（暗み）効果 */
@@ -27,6 +30,7 @@ body, html {
     background: radial-gradient(circle, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%);
     pointer-events: none;
     z-index: 5;
+    touch-action: none;
 }
 
 /* 赤いノイズを伴うグリッチオーバーレイ */
@@ -41,6 +45,7 @@ body, html {
     pointer-events: none;
     z-index: 15;
     transition: opacity 0.1s ease;
+    touch-action: none;
 }
 
 /* タイトル・ロック用オーバーレイ */
@@ -60,6 +65,9 @@ body, html {
     z-index: 10;
     cursor: pointer;
     transition: background-color 0.5s;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #overlay:hover {
@@ -67,30 +75,107 @@ body, html {
 }
 
 h1 {
-    font-size: 3rem;
-    letter-spacing: 0.5rem;
+    font-size: 2.5rem;
+    letter-spacing: 0.3rem;
     margin-bottom: 10px;
     text-shadow: 0 0 10px rgba(209, 194, 140, 0.5);
     animation: flicker 4s infinite;
 }
 
 #seed-display {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: #8c825c;
     margin-bottom: 20px;
     letter-spacing: 0.1rem;
 }
 
 p {
-    font-size: 1.2rem;
-    line-height: 1.8;
+    font-size: 1rem;
+    line-height: 1.6;
     margin: 5px 0;
 }
 
 .instructions {
-    margin-top: 30px;
-    font-size: 0.9rem;
+    margin-top: 20px;
+    font-size: 0.8rem;
     color: #8c825c;
+    line-height: 1.4;
+}
+
+/* --- モバイル用UI --- */
+#mobile-ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 8;
+    touch-action: none;
+}
+
+#mobile-ui.hidden {
+    display: none;
+}
+
+/* ジョイスティック */
+#joystick-container {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    width: 100px;
+    height: 100px;
+    pointer-events: auto;
+    touch-action: none;
+}
+
+#joystick-base {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#joystick-handle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    position: absolute;
+}
+
+/* 懐中電灯ボタン */
+#flashlight-btn {
+    position: absolute;
+    bottom: 50px;
+    right: 40px;
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #d1c28c;
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 0.05rem;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#flashlight-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
 }
 
 @keyframes flicker {
