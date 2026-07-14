@@ -1,0 +1,99 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #13130c;
+    font-family: 'Courier New', Courier, monospace;
+    user-select: none;
+}
+
+#canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* 画面全体のビネット（暗み）効果 */
+#vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* 赤いノイズを伴うグリッチオーバーレイ */
+#glitch-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(150, 0, 0, 0.9) 20%, rgba(0, 0, 0, 0.95) 100%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 15;
+    transition: opacity 0.1s ease;
+}
+
+/* タイトル・ロック用オーバーレイ */
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 10, 5, 0.85);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #d1c28c;
+    text-align: center;
+    z-index: 10;
+    cursor: pointer;
+    transition: background-color 0.5s;
+}
+
+#overlay:hover {
+    background-color: rgba(15, 15, 8, 0.9);
+}
+
+h1 {
+    font-size: 3rem;
+    letter-spacing: 0.5rem;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(209, 194, 140, 0.5);
+    animation: flicker 4s infinite;
+}
+
+#seed-display {
+    font-size: 1rem;
+    color: #8c825c;
+    margin-bottom: 20px;
+    letter-spacing: 0.1rem;
+}
+
+p {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    margin: 5px 0;
+}
+
+.instructions {
+    margin-top: 30px;
+    font-size: 0.9rem;
+    color: #8c825c;
+}
+
+@keyframes flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+    20%, 24%, 55% { opacity: 0.7; }
+}
