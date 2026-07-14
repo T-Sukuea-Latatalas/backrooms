@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Backrooms - Jigsaw Infinite Exploration</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,26 +12,40 @@
     <div id="glitch-overlay"></div>
     <div id="canvas-container"></div>
 
+    <!-- モバイル用UI -->
+    <div id="mobile-ui" class="hidden">
+        <div id="joystick-container">
+            <div id="joystick-base">
+                <div id="joystick-handle"></div>
+            </div>
+        </div>
+        <div id="flashlight-btn">
+            <span>FLASHLIGHT</span>
+        </div>
+    </div>
+
     <div id="overlay">
         <h1>THE BACKROOMS</h1>
         <div id="seed-display">SEED: INITIALIZING...</div>
-        <p>クリックして侵入する</p>
+        <p>クリック・タップして侵入する</p>
         <p class="instructions">
-            [W, A, S, D] : 移動<br>
-            [MOUSE] : 視点移動<br>
-            [F] : 懐中電灯 ON/OFF<br>
-            [ESC] : 一時停止
+            【PC操作】<br>
+            [W, A, S, D] : 移動 / [MOUSE] : 視点移動<br>
+            [F] : 懐中電灯 ON/OFF / [ESC] : 一時停止<br><br>
+            【モバイル操作】<br>
+            [画面左下] : 移動ジョイスティック<br>
+            [画面右エリアスワイプ] : 視点移動<br>
+            [右下ボタン] : 懐中電灯 ON/OFF
         </p>
     </div>
 
-    <!-- すべてのスクリプトはボディの最下部で読み込みます -->
     <!-- 1. Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <!-- 2. コアエンジン (window.Backrooms を初期化する) -->
     <script src="main.js"></script>
     
-    <!-- 3. 各レベルの定義スクリプト (初期化されたオブジェクトにレベル情報を登録する) -->
+    <!-- 3. 各レベルの定義スクリプト -->
     <script src="level0.js"></script>
     <script src="level1.js"></script>
 
